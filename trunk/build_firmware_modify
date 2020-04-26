@@ -1,7 +1,7 @@
 #!/bin/sh
 
 [ -z "$1" ] && echo "Please run '$0 PRODUCT_NAME' to start build (see 'configs/templates/') " && exit 1 
-
+if [ -z "$2" ];then
 if [ ! -f configs/templates/$1.config ] ; then
 	echo "configs/templates/$1.config not found "
 	exit 1
@@ -11,33 +11,33 @@ cp -f configs/templates/$1.config .config
 sed -i 's/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=y/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=n/g' .config
 sed -i 's/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=y/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=n/g' .config
 sed -i 's/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=y/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=n/g' .config
-sed -i 's/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=n/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=y/g' .config
 sed -i 's/CONFIG_FIRMWARE_INCLUDE_SRELAY=y/CONFIG_FIRMWARE_INCLUDE_SRELAY=n/g' .config
+
 echo "CONFIG_FIRMWARE_INCLUDE_ADBYBY=y" >> .config #adbyby plus+
 echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #aliddns
-echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> .config #smartdns
+echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=n" >> .config #smartdns
 echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=n" >> .config #集成v2ray执行文件，如果不集成，会从网上下载下来执行，不影响正常使用
-echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=y" >> .config #集成trojan执行文件，如果不集成，会从网上下载下来执行，不影响正常使用
+echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=n" >> .config #集成trojan执行文件，如果不集成，会从网上下载下来执行，不影响正常使用
 echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=y" >> .config #KP广告过滤
 echo "CONFIG_FIRMWARE_INCLUDE_CADDY=y" >> .config #在线文件管理服务
 echo "CONFIG_FIRMWARE_INCLUDE_CADDYBIN=n" >> .config #集成caddu执行文件，此文件有13M,请注意固件大小。如果不集成，会从网上下载下来执行，不影响正常使用
-echo "CONFIG_FIRMWARE_INCLUDE_KUMASOCKS=y" >> .config
+echo "CONFIG_FIRMWARE_INCLUDE_KUMASOCKS=n" >> .config
 echo "CONFIG_FIRMWARE_INCLUDE_ADGUARDHOME=y" >> .config
+echo "CONFIG_FIRMWARE_INCLUDE_WYY=y" >> .config #网易云解锁
+echo "CONFIG_FIRMWARE_INCLUDE_WYYBIN=n" >> .config #网易云解锁GO版本执行文件（2M多）注意固件超大小
 if [ "$1" = "PSG1208" ] || [ "$1" = "PSG1218" ] || [ "$1" = "PSG712" ]; then
 echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=n" >> .config #smartdns二进制文件
 else
 echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=y" >> .config #smartdns二进制文件
 fi
-
+fi
+sed -i 's/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=n/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=y/g' .config
 ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR
 
 kernel_id="3.4.x"
 kernel_cf=""
 kernel_tf=""
-uclibc_id="uClibc-ng-1.0.32"
-uclibc_cf=""
-uclibc_tf="$ROOTDIR/libc/${uclibc_id}/.config"
 busybox_id="1.24.x"
 busybox_cf="$ROOTDIR/configs/boards/busybox.config"
 busybox_tf="$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
@@ -58,13 +58,6 @@ func_disable_kernel_param()
 		sed -i "s/$1=y/\# $1 is not set/" $kernel_tf
 	elif [ -n "`grep \^$1=m $kernel_tf`" ] ; then
 		sed -i "s/$1=m/\# $1 is not set/" $kernel_tf
-	fi
-}
-
-func_disable_libc_param()
-{
-	if [ -n "`grep \^$1=y $uclibc_tf`" ] ; then
-		sed -i "s/$1=y/\# $1 is not set/" $uclibc_tf
 	fi
 }
 
@@ -106,7 +99,6 @@ fi
 
 board_h="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID/board.h"
 board_mk="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID/board.mk"
-uclibc_cf="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID/libc.config"
 kernel_cd="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID"
 kernel_tf="$ROOTDIR/$CONFIG_LINUXDIR/.config"
 
@@ -124,11 +116,6 @@ fi
 
 if [ ! -f "$kernel_cf" ] ; then
 	echo "Target kernel config ($kernel_cf) not found! Terminate."
-	exit 1
-fi
-
-if [ ! -f "$uclibc_cf" ] ; then
-	echo "Target uClibc config ($uclibc_cf) not found! Terminate."
 	exit 1
 fi
 
@@ -159,7 +146,6 @@ echo --------------------------COPY-CONFIG-----------------------------
 ######################### FOR-ALL-DEVICES #############################
 ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
 cp -fL "$kernel_cf" "$kernel_tf"
-cp -fL "$uclibc_cf" "$uclibc_tf"
 cp -fL "$busybox_cf" "$busybox_tf"
 cp -fL "$board_mk" "$ROOTDIR/user/shared/board.mk"
 cp -fL "$board_h" "$ROOTDIR/user/shared/include/ralink_board.h"
@@ -177,6 +163,9 @@ rm -rf "$dir_wifi_dst/mt76x2"
 rm -rf "$dir_wifi_dst/mt76x3"
 rm -rf "$dir_wifi_dst/mt7628"
 rm -rf "$dir_wifi_dst/mt7615"
+
+mkdir -p "$dir_wifi_dst/mt76x3"
+cp -f "$dir_wifi_src/rtpci/4.1.X.X/mt76x3/Kconfig" "$dir_wifi_dst/mt76x3/Kconfig"
 mkdir -p "$dir_wifi_dst/mt7615/embedded"
 cp -f "$dir_wifi_src/rtpci/4.4.2.1/mt7615/embedded/Kconfig" "$dir_wifi_dst/mt7615/embedded/Kconfig"
 
@@ -307,7 +296,6 @@ fi
 if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_INET_TUNNEL"
 	func_disable_kernel_param "CONFIG_IPV6"
-	func_disable_libc_param "UCLIBC_HAS_IPV6"
 	func_disable_busybox_param "CONFIG_PING6"
 	func_disable_busybox_param "CONFIG_FEATURE_IPV6"
 	func_disable_busybox_param "CONFIG_FEATURE_PREFER_IPV4_ADDRESS"

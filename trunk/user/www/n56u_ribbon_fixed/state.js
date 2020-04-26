@@ -249,6 +249,7 @@ function show_banner(L3){
 		bc += '<table class="" style="margin-top: 0px; margin-bottom: 5px" width="100%" border="0">\n';
 		bc += '  <tr>\n';
 		bc += '    <td width="60%" style="text-align: left"><b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span></td>\n';
+		bc += '    <td style="text-align: lift"><input type="hidden" id="scrATop" value=""></td>\n';
 		bc += '    <td style="text-align: right"><button type="button" id="clearlog_btn" class="btn btn-info" style="min-width: 170px;" onclick="clearlog();"><#CTL_clear#></button></td>\n';
 		bc += '  </tr>\n';
 		bc += '</table>\n';
@@ -378,8 +379,8 @@ function show_banner(L3){
 	show_top_status();
 }
 
-var tabtitle = new Array(20);
-var tablink = new Array(20);
+var tabtitle = new Array(21);
+var tablink = new Array(21);
 tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[1] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[2] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "<#menu5_2_4#>", "<#menu5_2_5#>", "<#menu5_2_6#>");
@@ -427,6 +428,9 @@ if (found_app_frp()){
 }
 if (found_app_caddy()){
 	tabtitle[18] = new Array("", "<#menu5_27_1#>");
+}
+if (found_app_wyy()){
+	tabtitle[18] = new Array("", "<#menu5_31_1#>");
 }
 //Level 3 Tab title
 
@@ -482,9 +486,13 @@ if (found_app_caddy()){
 	caddy_array = new Array("","Advanced_caddy.asp");
 	tablink[18] = (caddy_array);
 }
+if (found_app_wyy()){
+	wyy_array = new Array("","Advanced_wyy.asp");
+	tablink[19] = (wyy_array);
+}
 
 //Level 2 Menu
-menuL2_title = new Array(20)
+menuL2_title = new Array(21)
 menuL2_title = new Array("", "<#menu5_11#>", "<#menu5_12#>", "<#menu5_2#>", "<#menu5_3#>", "<#menu5_5#>", "<#menu5_4#>", "<#menu5_6#>", "<#menu5_10#>", "<#menu5_9#>", "<#menu5_7#>");
 if (found_app_scutclient()){
 	menuL2_title.push("<#menu5_13#>");
@@ -526,6 +534,10 @@ if (found_app_caddy()){
 	menuL2_title.push("<#menu5_27#>");
 } else menuL2_title.push("");
 
+if (found_app_wyy()){
+	menuL2_title.push("<#menu5_31#>");
+} else menuL2_title.push("");
+
 menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], tablink[8][1], tablink[9][1]);
 if (found_app_scutclient()){
 	menuL2_link.push(scutclient_array[1]);
@@ -560,6 +572,9 @@ if (found_app_frp()){
 } else menuL2_link.push("");
 if (found_app_caddy()){
 	menuL2_link.push(caddy_array[1]);
+} else menuL2_link.push("");
+if (found_app_wyy()){
+	menuL2_link.push(wyy_array[1]);
 } else menuL2_link.push("");
 
 //Level 1 Menu in Gateway, Router mode
@@ -1320,10 +1335,18 @@ function setLogData(){
         if($j("#log_area").val() == ''){
             $j("#log_area").text(data);
             $j("#log_area").prop('scrollTop', $j("#log_area").prop('scrollHeight'));
+            $j("#scrATop").val($j("#log_area").prop('scrollTop'));
         }else{
+            var scrMaxTop = $j("#log_area").prop('scrollHeight')
             var scrTop = $j("#log_area").prop('scrollTop');
             $j("#log_area").text(data);
-            $j("#log_area").prop('scrollTop', scrTop);
+            var scrITop = scrMaxTop - scrTop;
+            if($j("#scrATop").val() == scrTop || scrITop < 629){
+                $j("#log_area").prop('scrollTop', scrMaxTop);
+                $j("#scrATop").val($j("#log_area").prop('scrollTop'));
+            }else{
+                $j("#log_area").prop('scrollTop', scrTop);
+            }
         }
     });
 }

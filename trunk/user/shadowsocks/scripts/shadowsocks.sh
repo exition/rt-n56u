@@ -113,6 +113,14 @@ gen_config_file() {
 		fi
 }
 
+get_arg_out() {
+	router_proxy="1"
+	case "$router_proxy" in
+	1) echo "-o" ;;
+	2) echo "-O" ;;
+	esac
+}
+
 start_rules() {
     logger -t "SS" "正在添加防火墙规则..."
 	lua /etc_ro/ss/getconfig.lua $GLOBAL_SERVER > /tmp/server.txt
@@ -135,7 +143,6 @@ start_rules() {
 	local_port="1080"
 	lan_ac_ips=$lan_ac_ips
 	lan_ac_mode="b"
-	router_proxy="1"
 	#if [ "$GLOBAL_SERVER" == "$UDP_RELAY_SERVER" ]; then
 	#	ARG_UDP="-u"
 	if [ "$UDP_RELAY_SERVER" != "nil" ]; then
@@ -153,10 +160,8 @@ start_rules() {
 	gfwmode=""
 	if [ "$run_mode" = "gfw" ]; then
 		gfwmode="-g"
-		#socks="-o"
 	elif [ "$run_mode" = "router" ]; then
 		gfwmode="-r"
-		#socks="-o"
 	elif [ "$run_mode" = "oversea" ]; then
 		gfwmode="-c"
 	elif [ "$run_mode" = "all" ]; then
@@ -193,7 +198,7 @@ start_rules() {
 	-G "$lan_gm_ips" \
 	-D "$proxyport" \
 	-k "$lancon" \
-	$socks $gfwmode $ARG_UDP
+	$(get_arg_out) $gfwmode $ARG_UDP
 	return $?
 }
 
@@ -299,7 +304,7 @@ start_dns() {
 		fi
 		logger -st "SS" "启动chinadns..."
 		dns2tcp -L"127.0.0.1#5353" -R"$(nvram get tunnel_forward)" >/dev/null 2>&1 &
-		chinadns-ng -b 0.0.0.0 -l 65353 -c $(nvram get china_dns) -t 127.0.0.1#5353 -4 china -g /etc/storage/gfwlist/gfwlist_list.conf -m /tmp/cdn.txt >/dev/null 2>&1 &
+		chinadns-ng -b 0.0.0.0 -l 65353 -c $(nvram get china_dns) -t 127.0.0.1#5353 -4 china -m /tmp/cdn.txt >/dev/null 2>&1 &
 	sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
 sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
 cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
